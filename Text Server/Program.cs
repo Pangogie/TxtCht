@@ -1,4 +1,5 @@
-﻿using System;
+﻿// Some of these can be removed.
+using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Drawing;
@@ -8,16 +9,16 @@ using System.Collections.Generic;
 
 public class TextServer
 {
+    // Giant mess of globals because I'm bad at programming.
     private const int listenPort = 7200;
     static IPEndPoint groupEP = new IPEndPoint(IPAddress.Any, listenPort);
     Socket sSock;
+
     byte[] buffer;
     static ArrayList clientList;
-
     private string msgOfTheDay = "« Welcome to PanChat! »";
     private bool allowMultiClient = true;
     private bool debugMode = true;
-
     private struct ClientInfo
     {
         public Socket socket;
@@ -25,7 +26,6 @@ public class TextServer
         public bool isAdmin;
         public string ip;
     }
-
     private struct DataIn
     {
         public DataIn(byte[] buffer)
@@ -41,8 +41,8 @@ public class TextServer
         public string senderMessage;
     }
 
-////////////////////////////////////////////////////////////////////////
-
+    // Main and the initialization process are in here. Initialize() needs to have the server commands refactored out.
+    #region Main/Initialization
     private static int Main()
     {
         TextServer server = new TextServer();
@@ -109,9 +109,11 @@ public class TextServer
                 Console.WriteLine("Unrecognized command.");
         }
     }
+    #endregion
 
-////////////////////////////////////////////////////////////////////////
-
+    // The Async functions that make everything work.
+    // OnReceive is a huge mess. Several problems with mixing up user endpoints somewhere in there. Also needs to have the server commands be moved elsewhere.
+    #region Async Functions (Accept/Send/Receive)
     private void OnAccept(IAsyncResult ar)
     {
         Socket cSock = sSock.EndAccept(ar);
@@ -383,13 +385,10 @@ public class TextServer
         catch (Exception ex) { }
         
     }
+    #endregion
 
-////////////////////////////////////////////////////////////////////////
-
-    //  __   ___       __          __  
-    // /__` |__  |\ | |  \ | |\ | / _` 
-    // .__/ |___ | \| |__/ | | \| \__>                           
-
+    // Send functions are a mess. Need to refactor into single function.
+    #region Send Functions
     private void sendMessage(byte[] msgBuffer)
     {
         foreach (ClientInfo clientInfo in clientList)
@@ -433,13 +432,10 @@ public class TextServer
         }
         catch (Exception ex) { }
     }
+    #endregion
 
-////////////////////////////////////////////////////////////////////////
-
-    //         __   __      ___            __  ___    __        __  
-    // |\/| | /__` /  `    |__  |  | |\ | /  `  |  | /  \ |\ | /__` 
-    // |  | | .__/ \__,    |    \__/ | \| \__,  |  | \__/ | \| .__/ 
-
+    // These are misc. functions that could probably be redone and shared with the client.
+    #region Misc Functions
     private byte[] TrimArray(byte[] byteArray)
     {
             int byteCounter = byteArray.Length - 1;
@@ -468,4 +464,5 @@ public class TextServer
 
         return TrimArray(result.ToArray());
     }
+    #endregion
 }

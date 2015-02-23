@@ -1,4 +1,5 @@
-﻿using System;
+﻿// Some of these can be removed.
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -16,6 +17,7 @@ namespace Text_Client
 {
     public partial class ChatForm : Form
     {
+        // Giant mess of globals because I'm bad at programming.
         public EndPoint server;
         private Socket cSock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         private OptionsForm options = new OptionsForm();
@@ -24,9 +26,7 @@ namespace Text_Client
         public string kickReason = "";
         private byte[] buffer = new byte[1024];
         private bool userIsAdmin = false;
-
         private bool isApplicationActive;
-
         private struct DataIn
         {
             public DataIn(byte[] buffer)
@@ -47,13 +47,14 @@ namespace Text_Client
             public string senderMessage;
         }
 
-////////////////////////////////////////////////////////////////////////
-
+        // Form initialization.
         public ChatForm()
         {
             InitializeComponent();
         }
-
+        
+        // These are an absolute mess.
+        #region Form Controls/Functions
         private void Form1_Load(object sender, EventArgs e)
         {
             CheckForIllegalCrossThreadCalls = false;
@@ -87,8 +88,6 @@ namespace Text_Client
             cSock.Close();
         }
 
-////////////////////////////////////////////////////////////////////////
-
         private void SendButton_Click(object sender, EventArgs e)
         {
             if (SendTextbox.Text != "")
@@ -104,6 +103,85 @@ namespace Text_Client
             SendTextbox.Focus();
         }
 
+
+        private void SendTextbox_KeyDown(object sender, KeyEventArgs e)
+        {
+            // Allow Ctrl + A in the textbox.
+            if (e.Control && e.KeyCode == Keys.A)
+                SendTextbox.SelectAll();
+        }
+
+        private void ChatForm_Activated(object sender, EventArgs e)
+        {
+            isApplicationActive = true;
+        }
+
+        private void ChatForm_Deactivate(object sender, EventArgs e)
+        {
+            isApplicationActive = false;
+        }
+
+        [DllImport("user32.dll")]
+        static extern bool FlashWindow(IntPtr hwnd, bool bInvert);
+
+        string userItem;
+
+        private void UserList_MouseDown(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Right && userIsAdmin)
+            {
+                userItem = "";
+                //Point p = new Point(e.X + UserList.Location.X, e.Y + UserList.Location.Y);
+                Point p = new Point(e.X, e.Y);
+                try
+                {
+                    userItem = UserList.GetItemAt(p.X, p.Y).Text;
+                    p = new Point(e.X + UserList.Location.X, e.Y + UserList.Location.Y + 10);
+                    AdminMenuStrip.Show(PointToScreen(p));
+                }
+                catch
+                { }
+            }
+        }
+
+        private void kickToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            SendTextbox.Text = "/kick " + userItem;
+            SendButton_Click(sender, e);
+        }
+
+        private void OptionsButton_Click(object sender, EventArgs e)
+        {
+            options.formColor = this.BackColor;
+            options.ShowDialog();
+            this.BackColor = options.formColor;
+            LogTextbox.SelectionStart = 0;
+            LogTextbox.SelectionLength = LogTextbox.Text.Length;
+
+            //if (LogTextbox.SelectionFont != options.textFont)
+            //{
+            //    try
+            //    {
+            //        LogTextbox.SelectionFont = new Font(options.textFont.FontFamily, options.textFont.Size);
+            //    }
+            //    catch (Exception error)
+            //    {
+            //        MessageBox.Show(error.Message, "Font Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            //    }
+            //}
+        }
+
+        private void ChatForm_ResizeEnd(object sender, EventArgs e)
+        {
+            LogTextbox.SelectionStart = LogTextbox.Text.Length;
+            LogTextbox.ScrollToCaret();
+            LogTextbox.Update();
+        }
+        #endregion
+
+        // The Async functions that make everything work.
+        // Receive is a mess and severely need refactoring.
+        #region ASync Functions (Connect/Send/Receive)
         private void OnConnect(IAsyncResult ar)
         {
             cSock.EndConnect(ar);
@@ -118,7 +196,8 @@ namespace Text_Client
             cSock.BeginReceive(buffer, 0, buffer.Length, SocketFlags.None, new AsyncCallback(OnReceive), null);
             
         }
-          
+
+
         private void OnSend(IAsyncResult ar)
         {
             try
@@ -236,24 +315,14 @@ namespace Text_Client
             catch (Exception e)
             { }
         }
+        #endregion
 
-////////////////////////////////////////////////////////////////////////
-
-        //         __   __      ___            __  ___    __        __  
-        // |\/| | /__` /  `    |__  |  | |\ | /  `  |  | /  \ |\ | /__` 
-        // |  | | .__/ \__,    |    \__/ | \| \__,  |  | \__/ | \| .__/ 
-                                                              
+        // These are misc. functions that could probably be redone and shared with the server.
+        #region Misc Functions
         private void LogTextbox_LinkClicked(object sender, LinkClickedEventArgs e)
         {
             // Open links in a new tab in the default browser.
             System.Diagnostics.Process.Start(e.LinkText);
-        }
-
-        private void SendTextbox_KeyDown(object sender, KeyEventArgs e)
-        {
-            // Allow Ctrl + A in the textbox.
-            if (e.Control && e.KeyCode == Keys.A)
-                SendTextbox.SelectAll();
         }
 
         public byte[] ToByte(string message)
@@ -293,73 +362,6 @@ namespace Text_Client
             return rv;
         }
 
-        private void ChatForm_Activated(object sender, EventArgs e)
-        {
-            isApplicationActive = true;
-        }
-
-        private void ChatForm_Deactivate(object sender, EventArgs e)
-        {
-            isApplicationActive = false;
-        }
-
-        [DllImport("user32.dll")]
-        static extern bool FlashWindow(IntPtr hwnd, bool bInvert);
-
-        string userItem;
-
-        private void UserList_MouseDown(object sender, MouseEventArgs e)
-        {
-            if (e.Button == MouseButtons.Right && userIsAdmin)
-            {
-                userItem = "";
-                //Point p = new Point(e.X + UserList.Location.X, e.Y + UserList.Location.Y);
-                Point p = new Point(e.X, e.Y);
-                try
-                {
-                        userItem = UserList.GetItemAt(p.X, p.Y).Text;
-                        p = new Point(e.X + UserList.Location.X, e.Y + UserList.Location.Y + 10);
-                        AdminMenuStrip.Show(PointToScreen(p));
-                }
-                catch
-                { }
-            }
-        }
-
-        private void kickToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            SendTextbox.Text = "/kick " + userItem;
-            SendButton_Click(sender, e);
-        }
-
-        private void OptionsButton_Click(object sender, EventArgs e)
-        {
-            options.formColor = this.BackColor;
-            options.ShowDialog();
-            this.BackColor = options.formColor;
-            LogTextbox.SelectionStart = 0;
-            LogTextbox.SelectionLength = LogTextbox.Text.Length;
-
-            //if (LogTextbox.SelectionFont != options.textFont)
-            //{
-            //    try
-            //    {
-            //        LogTextbox.SelectionFont = new Font(options.textFont.FontFamily, options.textFont.Size);
-            //    }
-            //    catch (Exception error)
-            //    {
-            //        MessageBox.Show(error.Message, "Font Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            //    }
-            //}
-        }
-
-        private void ChatForm_ResizeEnd(object sender, EventArgs e)
-        {
-            LogTextbox.SelectionStart = LogTextbox.Text.Length;
-            LogTextbox.ScrollToCaret();
-            LogTextbox.Update();
-        }
-
         public static Color ColorFromHSV(double hue, double saturation, double value)
         {
             int hi = Convert.ToInt32(Math.Floor(hue / 60)) % 6;
@@ -384,5 +386,6 @@ namespace Text_Client
             else
                 return Color.FromArgb(255, v, p, q);
         }
+        #endregion
     }
 }
