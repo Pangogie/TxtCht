@@ -60,7 +60,9 @@ namespace Text_Client
             }
             try
             {
-                serverAddr = IPAddress.Parse(IPTextBox.Text);
+                if(!IPAddress.TryParse(IPTextBox.Text, out serverAddr))
+                    serverAddr = Dns.GetHostAddresses(IPTextBox.Text)[0];
+
                 allGood++;
             }
             catch

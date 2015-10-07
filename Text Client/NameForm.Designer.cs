@@ -79,7 +79,7 @@
             // 
             this.IPTextBox.ImeMode = System.Windows.Forms.ImeMode.Disable;
             this.IPTextBox.Location = new System.Drawing.Point(10, 14);
-            this.IPTextBox.MaxLength = 16;
+            this.IPTextBox.MaxLength = 64;
             this.IPTextBox.Name = "IPTextBox";
             this.IPTextBox.Size = new System.Drawing.Size(100, 20);
             this.IPTextBox.TabIndex = 1;

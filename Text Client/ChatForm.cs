@@ -184,7 +184,10 @@ namespace Text_Client
         #region ASync Functions (Connect/Send/Receive)
         private void OnConnect(IAsyncResult ar)
         {
-            cSock.EndConnect(ar);
+            try
+            { cSock.EndConnect(ar); }
+            catch (Exception ex)
+            { MessageBox.Show(ex.Message, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error); }
 
 
             string command = "/login " + userName;
