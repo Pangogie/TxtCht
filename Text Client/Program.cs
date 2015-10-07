@@ -36,6 +36,7 @@ namespace Text_Client
             {
                 MessageBox.Show("You have been kicked from the server.\r\nReason: " + chatForm.kickReason, "Kicked", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
             }
+
             Environment.Exit(0);
         }
     }
