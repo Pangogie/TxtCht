@@ -6,6 +6,8 @@ using System.Drawing;
 using System.Text;
 using System.Collections;
 using System.Collections.Generic;
+//using System.Threading;
+using System.Threading.Tasks;
 
 public class TextServer
 {
@@ -118,6 +120,8 @@ public class TextServer
             cSock.EndReceive(ar);
             buffer = TrimArray(buffer);
 
+            //The commands the server uses without the user.
+            #region Server Commands
             if (Encoding.ASCII.GetString(buffer).Substring(0, 1) == "/")
             {
                 string message = Encoding.ASCII.GetString(buffer);
@@ -164,8 +168,9 @@ public class TextServer
                         }
 
                         clientList.Add(clientInfo);
-                        sendMessage("« " + clientInfo.userName + " has logged in! »");
+
                         sendMessage("/login " + clientInfo.userName);
+                        sendMessage("« " + clientInfo.userName + " has logged in! »");
                         sendDirectMessage(msgOfTheDay, clientInfo);
                         Console.WriteLine(clientInfo.userName + "[" + clientInfo.ip + "] has logged in.");
                     }
@@ -185,6 +190,10 @@ public class TextServer
                     }
                 }
             }
+            #endregion
+
+            //Handle backend things before processing user commands.
+            #region Pre-User Commands Processing
             else
             {
                 DataIn data = new DataIn(buffer);
@@ -212,7 +221,10 @@ public class TextServer
                 }
 
                 bool msgIsCommand = false;
+                #endregion
 
+                // User entered commands
+                #region User Commands
                 if (data.senderMessage.Substring(0, 1) == "/")
                 {
                     string command = data.senderMessage.Substring(1, data.senderMessage.Length - 1);
@@ -355,6 +367,7 @@ public class TextServer
                     else
                         sendDirectMessage("Unrecognized command.", currentClient);
                 }
+                #endregion
 
                 if (!msgIsCommand)
                     sendMessage(buffer);

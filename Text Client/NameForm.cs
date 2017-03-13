@@ -81,23 +81,13 @@ namespace Text_Client
 
         private void NameForm_Load(object sender, EventArgs e)
         {
-            // Get IP Address of server from ServerIP.txt in my DropBox.
-
+            // Resolve personal website IP.
             bool abort = false;
             string IPString = "";
-            string txtLink = "http://dl.dropbox.com/u/17072899/ServerIP.txt";
-
-            HttpWebRequest httpRequest = (HttpWebRequest)WebRequest.Create(txtLink);
-
-            httpRequest.Timeout = 10000;
-            httpRequest.UserAgent = "Server IP Grabber";
 
             try
             {
-                HttpWebResponse webResponse = (HttpWebResponse)httpRequest.GetResponse();
-                System.IO.StreamReader responseStream = new System.IO.StreamReader(webResponse.GetResponseStream());
-                IPString = responseStream.ReadToEnd();
-                responseStream.Close();
+                IPString = Dns.GetHostAddresses("pangogie.me")[0].ToString();
             }
             catch
             {
