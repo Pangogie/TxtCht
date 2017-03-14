@@ -28,34 +28,36 @@ namespace Text_Client
         private bool userIsAdmin = false;
         private bool isApplicationActive;
 
-        private struct DataIn
-        {
-            public DataIn(byte[] buffer)
-            {
-                byte nameLength = buffer[0];
+        //Keep to remember byte format
+        //private struct DataIn
+        //{
+        //    public DataIn(byte[] buffer)
+        //    {
+        //        byte nameLength = buffer[0];
 
-                this.senderColor = Color.FromArgb(buffer[1], buffer[2], buffer[3]);
+        //        this.senderColor = Color.FromArgb(buffer[1], buffer[2], buffer[3]);
 
-                if (nameLength > 3)
-                    this.senderName = Encoding.ASCII.GetString(buffer, 4, nameLength);
-                else
-                    this.senderName = "";
+        //        if (nameLength > 3)
+        //            this.senderName = Encoding.ASCII.GetString(buffer, 4, nameLength);
+        //        else
+        //            this.senderName = "";
 
-                this.senderMessage = Encoding.GetEncoding(437).GetString(buffer, nameLength + 4, buffer.Length - nameLength - 4);
-            }
+        //        this.senderMessage = Encoding.GetEncoding(437).GetString(buffer, nameLength + 4, buffer.Length - nameLength - 4);
+        //    }
 
-            public Color senderColor;
-            public string senderName;
-            public string senderMessage;
-        }
+        //    public Color senderColor;
+        //    public string senderName;
+        //    public string senderMessage;
+        //}
+
 
         // Form initialization.
         public ChatForm()
         {
             InitializeComponent();
         }
-        
-        // These are an absolute mess.
+
+        // These are an absolute mess. But don't really need to be touched yet.
         #region Form Controls/Functions
         private void Form1_Load(object sender, EventArgs e)
         {
@@ -66,26 +68,13 @@ namespace Text_Client
             h %= 1;
             h *= 360;
             options.nameColor = ColorFromHSV(h, 0.5, 0.95);
-            
-            try
-            {
-                //sockClient.ReceiveTimeout = -1;
-                IAsyncResult process =  cSock.BeginConnect(server, new AsyncCallback(OnConnect), null);
-                process.AsyncWaitHandle.WaitOne();
-                //sockClient.Connect(server);
-            }
-            catch (Exception explosion)
-            {
-                MessageBox.Show("Something exploded.\r\nPlease tell Pangogie.\r\n\r\n" + explosion.Message, "Uh Oh", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-            }
+
+            IAsyncResult process = cSock.BeginConnect(server, new AsyncCallback(OnConnect), null);
+            process.AsyncWaitHandle.WaitOne();
         }
 
         private void Form1_FormClosed(object sender, FormClosedEventArgs e)
         {
-            string command = "/logout";
-            buffer = Encoding.ASCII.GetBytes(command);
-            buffer = TrimArray(buffer);
-
             IAsyncResult process = cSock.BeginSend(buffer, 0, buffer.Length, SocketFlags.None, new AsyncCallback(OnSend), null);
             process.AsyncWaitHandle.WaitOne();
             cSock.Disconnect(false);
@@ -101,7 +90,7 @@ namespace Text_Client
 
                 SendTextbox.Clear();
 
-                IAsyncResult process =  cSock.BeginSend(buffer, 0, buffer.Length, SocketFlags.None, new AsyncCallback(OnSend), null);
+                IAsyncResult process = cSock.BeginSend(buffer, 0, buffer.Length, SocketFlags.None, new AsyncCallback(OnSend), null);
                 process.AsyncWaitHandle.WaitOne();
             }
 
@@ -199,27 +188,18 @@ namespace Text_Client
             buffer = Encoding.ASCII.GetBytes(command);
             buffer = TrimArray(buffer);
 
-            IAsyncResult process =  cSock.BeginSend(buffer, 0, buffer.Length, SocketFlags.None, new AsyncCallback(OnSend), null);
+            IAsyncResult process = cSock.BeginSend(buffer, 0, buffer.Length, SocketFlags.None, new AsyncCallback(OnSend), null);
             process.AsyncWaitHandle.WaitOne();
 
             buffer = new byte[1024];
             cSock.BeginReceive(buffer, 0, buffer.Length, SocketFlags.None, new AsyncCallback(OnReceive), null);
-            
+
         }
 
 
         private void OnSend(IAsyncResult ar)
         {
-            try
-            {
-                cSock.EndSend(ar);
-            }
-            catch (ObjectDisposedException)
-            { }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+            cSock.EndSend(ar);
         }
 
         private void OnReceive(IAsyncResult ar)
