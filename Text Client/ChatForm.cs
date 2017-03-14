@@ -27,6 +27,7 @@ namespace Text_Client
         private byte[] buffer = new byte[1024];
         private bool userIsAdmin = false;
         private bool isApplicationActive;
+
         private struct DataIn
         {
             public DataIn(byte[] buffer)
@@ -42,6 +43,7 @@ namespace Text_Client
 
                 this.senderMessage = Encoding.GetEncoding(437).GetString(buffer, nameLength + 4, buffer.Length - nameLength - 4);
             }
+
             public Color senderColor;
             public string senderName;
             public string senderMessage;
@@ -68,7 +70,8 @@ namespace Text_Client
             try
             {
                 //sockClient.ReceiveTimeout = -1;
-                cSock.BeginConnect(server, new AsyncCallback(OnConnect), null);
+                IAsyncResult process =  cSock.BeginConnect(server, new AsyncCallback(OnConnect), null);
+                process.AsyncWaitHandle.WaitOne();
                 //sockClient.Connect(server);
             }
             catch (Exception explosion)
@@ -83,7 +86,8 @@ namespace Text_Client
             buffer = Encoding.ASCII.GetBytes(command);
             buffer = TrimArray(buffer);
 
-            cSock.Send(buffer, 0, buffer.Length, SocketFlags.None);
+            IAsyncResult process = cSock.BeginSend(buffer, 0, buffer.Length, SocketFlags.None, new AsyncCallback(OnSend), null);
+            process.AsyncWaitHandle.WaitOne();
             cSock.Disconnect(false);
             cSock.Close();
         }
@@ -97,7 +101,8 @@ namespace Text_Client
 
                 SendTextbox.Clear();
 
-                cSock.BeginSend(buffer, 0, buffer.Length, SocketFlags.None, new AsyncCallback(OnSend), null);
+                IAsyncResult process =  cSock.BeginSend(buffer, 0, buffer.Length, SocketFlags.None, new AsyncCallback(OnSend), null);
+                process.AsyncWaitHandle.WaitOne();
             }
 
             SendTextbox.Focus();
@@ -194,7 +199,9 @@ namespace Text_Client
             buffer = Encoding.ASCII.GetBytes(command);
             buffer = TrimArray(buffer);
 
-            cSock.BeginSend(buffer, 0, buffer.Length, SocketFlags.None, new AsyncCallback(OnSend), null);
+            IAsyncResult process =  cSock.BeginSend(buffer, 0, buffer.Length, SocketFlags.None, new AsyncCallback(OnSend), null);
+            process.AsyncWaitHandle.WaitOne();
+
             buffer = new byte[1024];
             cSock.BeginReceive(buffer, 0, buffer.Length, SocketFlags.None, new AsyncCallback(OnReceive), null);
             
@@ -218,17 +225,12 @@ namespace Text_Client
         private void OnReceive(IAsyncResult ar)
         {
             // Try/Catch needed so there is no error upon exit.
-            try
-            {
-                cSock.EndReceive(ar);
-            }
-            catch (Exception explosion)
-            {
-                MessageBox.Show("Program crashed upon exiting.\r\nThis problem is known." + explosion.Message, "Uh Oh", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-            }
+            cSock.EndReceive(ar);
 
             buffer = TrimArray(buffer);
             DataIn data = new DataIn(buffer);
+            buffer = new byte[1024];
+            cSock.BeginReceive(buffer, 0, buffer.Length, SocketFlags.None, new AsyncCallback(OnReceive), null);
 
             if (data.senderMessage.Substring(0, 1) == "/")
             {
@@ -306,17 +308,6 @@ namespace Text_Client
                 LogTextbox.ScrollToCaret();
                 LogTextbox.Update();
             }
-
-            // Clear the buffer.
-            buffer = new byte[1024];
-            
-            // Try/Catch needed so there is no error message on exit.
-            try
-            {
-                cSock.BeginReceive(buffer, 0, buffer.Length, SocketFlags.None, new AsyncCallback(OnReceive), null);
-            }
-            catch (Exception e)
-            { }
         }
         #endregion
 
